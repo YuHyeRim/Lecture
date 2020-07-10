@@ -1,0 +1,1324 @@
+### 회귀분석 학기말 프로젝트 : Kaggle에서 수집한 전세계 국가 기대수명 데이터를 바탕으로 회귀분석을 활용하여 전세계 기대수명 예측 및 아시아 국가 기대수명 요인분석 진행(파이썬)
+# 데이터 불러오기
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+from scipy.stats.mstats import winsorize
+import statsmodels.formula.api as smf
+import os
+
+life_data = pd.read_csv('Life Expectancy Data.csv')
+life_data.info()
+
+life_data.columns = ['Country', 'Year', 'Status', 'Life_Expectancy', 'Adult_Mortality',
+                     'Infant_Deaths', 'Alcohol', 'Percentage_Expenditure', 'Hepatitis_B',
+                     'Measles', 'BMI', 'Under5_Deaths', 'Polio', 'Total_Expenditure',
+                     'Diphtheria', 'HIV_AIDS', 'GDP', 'Population', 'Thinness_10_19_Years',
+'Thinness_5_9_years', 'Income_Composition_Of_Resources', 'Schooling']
+
+life_data['Country']=life_data['Country'].astype('category')
+life_data['Status']=life_data['Status'].astype('category')
+life_data.head()
+
+#EDA
+life_data.head()
+life_data.tail()
+
+plt.figure(figsize=(15, 25))
+life_data.Country.value_counts(ascending=True).plot(kind='barh')
+plt.title('Count of Rows by Country')
+plt.xlabel('Count of Rows')
+plt.ylabel('Country')
+plt.title("Plot of Country")
+plt.tight_layout()
+plt.show()
+
+life_data.Year.value_counts().sort_index().plot(kind='barh')
+plt.title('Count of Rows by Year')
+plt.xlabel('Count of Rows')
+plt.ylabel('Year')
+plt.title("Counts of Rows by Year")
+plt.show()
+
+life_data.Status.value_counts().plot(kind='pie', autopct='%.2f')
+plt.ylabel('')
+plt.title('Pie Chart of Country Status')
+
+plot = sns.boxplot(x='Status',y='Life_Expectancy',data=life_data)
+plot.set_xlabel("Status")
+plot.set_ylabel("Life Expectancy")
+plot.set_title("Boxplot of Status and Life Expectancy")
+
+life_data["Life_Expectancy"].describe()
+
+sns.boxplot(y="Life_Expectancy",data=life_data)
+plt.title("Boxplot of Life Expectancy")
+
+plt.hist(life_data["Life_Expectancy"],bins=20)
+plt.title('Count of Rows by Life Expectancy')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Count of Rows')
+
+life_data["Adult_Mortality"].describe()
+
+sns.boxplot(y="Adult_Mortality",data=life_data)
+plt.title("Boxplot of Adult Mortality")
+
+plt.hist(life_data["Adult_Mortality"],bins=15)
+plt.title('Count of Rows by Adult Mortality')
+plt.xlabel('Adult_Mortality')
+plt.ylabel('Count of Rows')
+
+life_data["Infant_Deaths"].describe()
+
+sns.boxplot(y="Infant_Deaths",data=life_data)
+plt.title("Boxplot of Infant Deaths")
+
+plt.hist(life_data["Infant_Deaths"],bins=9)
+plt.title('Count of Rows by Infant Deaths')
+plt.xlabel('Infant Deaths')
+plt.ylabel('Count of Rows')
+
+life_data["Alcohol"].describe()
+
+sns.boxplot(y="Alcohol",data=life_data)
+plt.title("Boxplot of Alcohol")
+
+plt.hist(life_data["Alcohol"],bins=15)
+plt.title('Count of Rows by Alcohol')
+plt.xlabel('Alcohol')
+plt.ylabel('Count of Rows')
+
+life_data["Percentage_Expenditure"].describe()
+
+sns.boxplot(y="Percentage_Expenditure",data=life_data)
+plt.title("Boxplot of Percentage_Expenditure")
+
+plt.hist(life_data["Percentage_Expenditure"])
+plt.title('Count of Rows by Percentage Expenditure')
+plt.xlabel('Percentage Expenditure')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(x="Status",y="Percentage_Expenditure",data=life_data)
+plt.title("Boxplot of Percentage_Expenditure and Status")
+
+life_data["Hepatitis_B"].describe()
+
+sns.boxplot(y="Hepatitis_B",data=life_data)
+plt.title("Boxplot of Hepatitis_B")
+
+plt.hist(life_data["Hepatitis_B"],bins=10)
+plt.title('Count of Rows by Hepatitis_B')
+plt.xlabel('Hepatitis_B')
+plt.ylabel('Count of Rows')
+
+life_data["Measles"].describe()
+
+sns.boxplot(y="Measles",data=life_data)
+plt.title("Boxplot of Measles")
+plt.hist(life_data["Measles"],bins=15)
+plt.title('Count of Rows by Measles')
+plt.xlabel('Measles')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(x="Status",y="Measles",data=life_data)
+plt.title("Boxplot of Status and Measles")
+
+life_data["BMI"].describe()
+
+sns.boxplot(y="BMI",data=life_data)
+plt.title("Boxplot of BMI")
+
+plt.hist(life_data["BMI"],bins=10)
+plt.title('Count of Rows by BMI')
+plt.xlabel('BMI')
+plt.ylabel('Count of Rows')
+
+life_data["Under5_Deaths"].describe()
+
+sns.boxplot(y="Under5_Deaths",data=life_data)
+plt.title("Boxplot of Under5_Deaths")
+
+plt.hist(life_data["Under5_Deaths"],bins=50)
+plt.title('Count of Rows by Under5_Deaths')
+plt.xlabel('Under5_Deaths')
+plt.ylabel('Count of Rows')
+
+life_data["Polio"].describe()
+
+sns.boxplot(y="Polio",data=life_data)
+plt.title("Boxplot of Polio")
+
+plt.hist(life_data["Polio"],bins=15)
+plt.title('Count of Rows by Polio')
+plt.xlabel('Polio')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(x="Status",y="Polio",data=life_data)
+plt.title("Boxplot of Status and Polio")
+
+life_data["Total_Expenditure"].describe()
+
+plt.hist(life_data["Total_Expenditure"],bins=20)
+plt.title('Count of Rows by Total Expenditure')
+plt.xlabel('Total Expenditure')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(y="Total_Expenditure",data=life_data)
+plt.title("Boxplot of Total Expenditure")
+
+life_data["Diphtheria"].describe()
+
+sns.boxplot(y="Diphtheria",data=life_data)
+plt.title("Boxplot of Diphtheira")
+
+plt.hist(life_data["Diphtheria"],bins=15)
+plt.title('Count of Rows by Diphtheria')
+plt.xlabel('Diphtheria')
+plt.ylabel('Count of Rows')
+life_data["HIV_AIDS"].describe()
+
+sns.boxplot(y="HIV_AIDS",data=life_data)
+plt.title("Boxplot of HIV_AIDS")
+
+plt.hist(life_data["HIV_AIDS"],bins=15)
+plt.title('Count of Rows by HIV_AIDS')
+plt.xlabel('HIV_AIDS')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(x="Status",y="HIV_AIDS",data=life_data)
+plt.title("Boxplot of Status and HIV_AIDS")
+
+life_data["GDP"].describe()
+
+sns.boxplot(y="GDP",data=life_data)
+plt.title("Boxplot of GDP")
+
+plt.hist(life_data["GDP"],bins=20)
+plt.title('Count of Rows by GDP')
+plt.xlabel('GDP')
+plt.ylabel('Count of Rows')
+
+sns.boxplot(x='Status',y="GDP",data=life_data)
+plt.title("Boxplot of Status and GDP")
+
+life_data["Population"].describe()
+
+sns.boxplot(y="Population",data=life_data)
+plt.title("Boxplot of Population")
+plt.hist(life_data["Population"]/1000000000,bins=10)
+plt.title('Count of Rows by Population/1000000000')
+plt.xlabel('Population')
+plt.ylabel('Count of Rows')
+
+life_data["Thinness_10_19_Years"].describe()
+
+sns.boxplot(y="Thinness_10_19_Years",data=life_data)
+plt.title("Boxplot of Thinness_10_19_Years")
+
+plt.hist(life_data["Thinness_10_19_Years"],bins=20)
+plt.title('Count of Rows by Thinness_10_19_Years')
+plt.xlabel('Thinness_10_19_Years')
+plt.ylabel('Count of Rows')
+
+life_data['Thinness_5_9_years'].describe()
+
+sns.boxplot(y="Thinness_5_9_years",data=life_data)
+plt.title("Boxplot of Thinness_5_9_years")
+
+plt.hist(life_data["Thinness_5_9_years"],bins=15)
+plt.title('Count of Rows by Thinness_5_9_years')
+plt.xlabel('Thinness_5_9_Years')
+plt.ylabel('Count of Rows')
+
+life_data["Income_Composition_Of_Resources"].describe()
+
+sns.boxplot(y="Income_Composition_Of_Resources",data=life_data)
+plt.title("Boxplot of Income_Composition_Of_Resources")
+
+plt.hist(life_data["Income_Composition_Of_Resources"],bins=25)
+plt.title('Count of Rows by Income_Composition_Of_Resources')
+plt.xlabel('Income_Composition_Of_Resources')
+plt.ylabel('Count of Rows')
+
+life_data['Schooling'].describe()
+
+sns.boxplot(y="Schooling",data=life_data)
+plt.title("Boxplot of Schooling")
+
+plt.hist(life_data["Schooling"],bins=15)
+plt.title('Count of Rows by Schooling')
+plt.xlabel('Schooling')
+plt.ylabel('Count of Rows')
+
+# 전처리
+life_data.describe().iloc[:, 1:]
+
+# 이상치 확인후, 이상치를 결측으로 처리한 뒤 결측값대체
+plt.figure(figsize=(15,10))
+for i, col in enumerate(['Adult_Mortality', 'Infant_Deaths', 'BMI', 'Under5_Deaths', 'GDP', 'Population'], start=1):
+plt.subplot(2, 3, i)
+    life_data.boxplot(col)
+
+mort_5_percentile = np.percentile(life_data.Adult_Mortality.dropna(), 5)
+life_data.Adult_Mortality = life_data.apply(lambda x: np.nan if x.Adult_Mortality < mort_5_percentile else x.Adult_Mortality, axis=1)
+life_data.Infant_Deaths = life_data.Infant_Deaths.replace(0, np.nan)
+life_data.BMI = life_data.apply(lambda x: np.nan if (x.BMI < 10 or x.BMI > 50) else x.BMI, axis=1)
+life_data['Under5_Deaths'] = life_data['Under5_Deaths'].replace(0, np.nan)
+# 결측 분포 파악
+plt.figure(figsize=(12,12))
+sns.heatmap(life_data.isnull(),cbar=False)
+
+# 각 열의 결측 개수와 비율 출력 함수
+def null_column_percentage(df):
+    df_cols = list(df.columns)
+    cols_total_count = len(list(df.columns))
+    cols_count = 0
+    for loc, col in enumerate(df_cols):
+        null_count = df[col].isnull().sum()
+        total_count = df[col].isnull().count()
+        percent_null = round(null_count/total_count*100, 2)
+        if null_count > 0:
+            cols_count += 1
+            print('[iloc = {}] {} has {} null values: {}% null'.format(loc, col, null_count, percent_null))
+    cols_percent_null = round(cols_count/cols_total_count*100, 2)
+    print('Out of {} total columns, {} contain null values; {}% columns contain null values.'.format(cols_total_count, cols_count, cols_percent_null))
+    
+null_column_percentage(life_data)
+life_data.drop(columns='BMI', inplace=True)
+
+# 연도별로 각 열의 중앙값으로 결측치 대체 함수(시계열 데이터 특성)
+life_impute = []    # 결측치가 대체된 데이터를 저장하는 리스트
+
+for Year in list(life_data.Year.unique()):
+    year_data = life_data[life_data.Year == Year].copy()
+    for col in list(year_data.columns)[3:]:
+        year_data[col] = year_data[col].fillna(year_data[col].dropna().median()).copy()
+    life_impute.append(year_data)
+life_data = pd.concat(life_impute).copy()
+null_column_percentage(life_data)
+
+plt.figure(figsize=(12,12))
+sns.heatmap(life_data.isnull(),cbar=False)
+
+# 나라명, 연도, 국가 상태 변수는 제외 => 설명변수, 반응변수 역할을 할 수 있는 변수만 남김
+var = list(life_data.columns)[3:]
+
+# 각 변수의 boxplot과 histogram 그래프로 이상치 존재 파악 함수
+def outliers_graph(df):
+    plt.figure(figsize=(15, 40))
+    i = 0
+    for col in var:
+        i += 1
+        plt.subplot(9, 4, i)
+        plt.boxplot(df[col])
+        plt.title('{} boxplot'.format(col))
+        i += 1
+        plt.subplot(9, 4, i)
+        plt.hist(df[col])
+        plt.title('{} histogram'.format(col))
+    plt.show()
+outliers_graph(life_data)
+
+# 2*iqr을 기준으로 각 열의 이상치 개수와 비율 출력 함수
+def outlier_number_percent(col, df):
+    print(12*'-' + col + 12*'-')
+    pct75, pct25 = np.percentile(df[col], [75, 25])
+    iqr = pct75 - pct25
+    min_value = pct25 - (iqr*2)
+    max_value = pct75 + (iqr*2)
+    count = len(np.where((df[col] > max_value) | (df[col] < min_value))[0])
+    percent = round(count/len(df[col])*100, 2)
+    print('Number of outliers: {}'.format(count))
+    print('Percent outlier: {}%'.format(percent))
+
+for col in var:
+    outlier_number_percent(col,life_data)
+
+# winsorize 방법으로 이상치 처리
+life_wins_dict = {}     # 이상치가 처리된 데이터를 저장하는 딕셔너리
+
+def winsorize_graph(df, col, lower_limit=0, upper_limit=0, show_plot=True):
+    life_wins = winsorize(df[col], limits=(lower_limit, upper_limit))
+    life_wins_dict[col] = life_wins
+    if show_plot == True:
+        plt.figure(figsize=(15,5))
+        plt.subplot(121)
+        plt.boxplot(df[col])
+        plt.title('original {}'.format(col))
+        plt.subplot(122)
+        plt.boxplot(life_wins)
+        plt.title('wins=({},{}) {}'.format(lower_limit, upper_limit, col))
+        plt.show()
+
+# 이상치 처리된 변수들 boxplot 그래프
+plt.figure(figsize=(15,5))
+for i, col in enumerate(var, 1):
+    plt.subplot(2, 9, i)
+    plt.boxplot(life_wins_dict[col])
+plt.tight_layout()
+plt.show()
+
+life_wins_data = life_data.iloc[:,0:3]
+for col in var:
+    life_wins_data[col] = life_wins_dict[col]
+
+# 변수들 히스토그램
+plt.figure(figsize=(15, 20))
+for i, col in enumerate(var, 1):
+    plt.subplot(5, 4, i)
+    plt.hist(life_wins_data[col])
+    plt.title(col)
+
+plt.figure(figsize=(15, 25))
+life_wins_data.Country.value_counts(ascending=True).plot(kind='barh')
+plt.title('Count of Rows by Country')
+plt.xlabel('Count of Rows')
+plt.ylabel('Country')
+plt.tight_layout()
+plt.show()
+
+life_wins_data.Year.value_counts().sort_index().plot(kind='barh')
+plt.title('Count of Rows by Year')
+plt.xlabel('Count of Rows')
+plt.ylabel('Year')
+plt.show()
+
+plt.figure(figsize=(10, 5))
+plt.subplot(121)
+life_wins_data.Status.value_counts().plot(kind='bar')
+plt.title('Count of Rows by Country Status')
+plt.xlabel('Country Status')
+plt.ylabel('Count of Rows')
+plt.xticks(rotation=0)
+
+plt.subplot(122)
+life_wins_data.Status.value_counts().plot(kind='pie', autopct='%.2f')
+plt.ylabel('')
+plt.title('Country Status Pie Chart')
+
+plt.show()
+
+# Status에 따른 T-test
+life_wins_data.groupby('Status').Life_Expectancy.agg(['mean'])
+
+plt.figure(figsize=(7,6))
+plot = sns.boxplot(x='Status',y='Life_Expectancy',data=life_data)
+plot.set_xlabel("Status")
+plot.set_ylabel("Life Expectancy")
+plot.set_title("Boxplot of Status and Life Expectancy")
+
+developed_le = life_wins_data[life_wins_data.Status == 'Developed'].Life_Expectancy
+developing_le = life_wins_data[life_wins_data.Status == 'Developing'].Life_Expectancy
+stats.ttest_ind(developed_le, developing_le, equal_var=False)
+
+# developed와 developing으로 모델 분류
+developed_data = life_wins_data[life_wins_data.Status == 'Developed']
+developing_data = life_wins_data[life_wins_data.Status == 'Developing']
+mask = np.triu(life_wins_data[var].corr())
+plt.figure(figsize=(15,6))
+sns.heatmap(life_wins_data[var].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm', mask=mask)
+plt.ylim(18, 0)
+plt.title('Data Correlation Matrix Heatmap')
+plt.show()
+
+mask = np.triu(developing_data[var].corr())
+plt.figure(figsize=(15,6))
+sns.heatmap(developing_data[var].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm', mask=mask)
+plt.ylim(18, 0)
+plt.title('Developing Data Correlation Matrix Heatmap')
+plt.show()
+
+mask = np.triu(developed_data[var].corr())
+plt.figure(figsize=(15,6))
+sns.heatmap(developed_data[var].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm', mask=mask)
+plt.ylim(18, 0)
+plt.title('Developed Data Correlation Matrix Heatmap')
+plt.show()
+
+################# 회귀모델링
+from sklearn.preprocessing import LabelEncoder
+encoder = LabelEncoder()
+life_wins_data['Status'] = encoder.fit_transform(life_wins_data['Status'])
+
+var2 = list(life_data.columns)[2:]
+
+# train/test set 분리 : 7대3
+from sklearn.model_selection import train_test_split
+life_train , life_test = train_test_split(life_wins_data, test_size = 0.3, train_size=0.7,random_state=1234, shuffle = True, stratify = life_wins_data.Status)
+life_train.info()
+
+import csv
+write =  open(life_train.csv','w',encoding='utf-8',newline='') 
+wr = csv.writer(write)
+wr.writerow(life_train)
+for i in range(1,2056):
+     wr.writerow(life_train.iloc[i,:])
+write.close()
+
+plt.figure(figsize=(15,6))
+sns.heatmap(life_train[var2].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm')
+plt.title('Data Correlation Matrix Heatmap')
+plt.show()
+
+##### 단순선형회귀
+# 상수항만 존재하는 모델
+result_intercept = smf.ols('Life_Expectancy~1', data=life_train).fit()
+result_intercept.summary()
+
+# 단순선형회귀 적합
+result_slr = smf.ols('Life_Expectancy ~ HIV_AIDS', data=life_train).fit()
+result_slr.summary()
+
+# 단순선형회귀 시각화
+plt.figure(figsize=(13,7))
+
+plt.scatter(life_train['HIV_AIDS'], life_train['Life_Expectancy'], marker='o', label='realtrain')
+plt.scatter(life_train['HIV_AIDS'], result_slr.fittedvalues, marker='.', label='fitted')
+plt.plot(life_train['HIV_AIDS'], result_slr.predict(life_train['HIV_AIDS']), color='blue', linestyle='dashed', label='regression', markersize=0)
+
+pred_slr = result_slr.get_prediction().summary_frame()
+
+plt.plot(life_train['HIV_AIDS'], pred_slr['mean_ci_lower'], 'r-.', label='means 95% CI', linewidth=1)
+plt.plot(life_train['HIV_AIDS'], pred_slr['mean_ci_upper'], 'r-.', linewidth=1)
+plt.plot(life_train['HIV_AIDS'], pred_slr['obs_ci_lower'], 'g-.', label='obs 95% CI', linewidth=1)
+plt.plot(life_train['HIV_AIDS'], pred_slr['obs_ci_upper'], 'g-.', linewidth=1)
+plt.xlabel('HIV_AIDS')
+plt.legend()
+
+# 선형성 (상관계수 = -0.8)
+plt.scatter('HIV_AIDS','Life_Expectancy',data=life_train)
+
+# 정규성
+resid_slr = result_slr.resid
+stats.probplot(resid_slr,plot=plt)
+plt.show()
+
+# 등분산성
+fitted_slr = result_slr.predict(life_train)
+sns.regplot(fitted_slr, stats.zscore(resid_slr),lowess = True, line_kws={'color' : 'red'})
+plt.xlim(55.0, 72)
+plt.show()
+
+## mlr1 : Status 추가
+result_mlr1 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status', data=life_train).fit()
+result_mlr1.summary()
+# mlr1_Scatter plot
+y = life_test['Life_Expectancy']
+y_hat1 = result_mlr1.predict(life_test[['HIV_AIDS' , 'Status']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat1, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat1')
+plt.title('Scatter Plot of mlr1')
+
+# mlr2 : Income 변수 추가
+result_mlr2 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources', data=life_train).fit()
+result_mlr2.summary()
+
+# mlr2_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat2 = result_mlr2.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+
+plt.scatter(y, y_hat2, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat2')
+plt.title('Scatter Plot of mlr2')
+# mlr3 : Adult_Mortality 변수 추가
+result_mlr3 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality', data=life_train).fit()
+result_mlr3.summary()
+
+# mlr3_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat3 = result_mlr3.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat3, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat3')
+plt.title('Scatter Plot of mlr3')
+
+# Status:Adult_Mortality 추가
+result_mlr31 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Status:Adult_Mortality', data=life_train).fit()
+result_mlr31.summary()
+
+# F test
+anova_lm(result_mlr3, result_mlr31, typ=1)
+
+# VIF확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality', life_train, return_type = 'dataframe')
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr31_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat31 = result_mlr31.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat31, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat31')
+plt.title('Scatter Plot of mlr31')
+
+# mlr4 : Diphtheria 변수 추가
+result_mlr4 = smf.ols(
+    'Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Status:Adult_Mortality',
+    data=life_train).fit()
+result_mlr4.summary()
+
+# VIF지수 확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria', life_train, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+# mlr4_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat4 = result_mlr4.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality','Diphtheria']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat4, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat4')
+plt.title('Scatter Plot of mlr4')
+
+# mlr5 : Infant_Deaths 변수 추가
+result_mlr5 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths', data=life_train).fit()
+result_mlr5.summary()
+
+# VIF확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths', life_train, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr5_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat5 = result_mlr5.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality', 'Diphtheria','Infant_Deaths']])
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat5, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat5')
+plt.title('Scatter Plot of mlr5')
+
+# mlr6 : GDP 변수 추가
+result_mlr6 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Status:Adult_Mortality', data=life_train).fit()
+result_mlr6.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP', life_train, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr6_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat6 = result_mlr6.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality', 'Diphtheria','Infant_Deaths','GDP']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat6, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat6')
+plt.title('Scatter Plot of mlr6')
+
+# mlr7 : Thinness_5_9_years 변수 추가
+result_mlr7 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Status:Adult_Mortality', data=life_train).fit()
+result_mlr7.summary()
+
+# Status : Thinness_5_9_years 추가
+result_mlr71 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Status:Adult_Mortality + Status:Thinness_5_9_years', data=life_train).fit()
+result_mlr71.summary()
+
+# 기존에 존재하던 Status:Adult_Mortality 제거
+result_mlr72 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Status:Thinness_5_9_years', data=life_train).fit()
+result_mlr72.summary()
+
+# F test
+anova_lm(result_mlr72, result_mlr71, typ=1)
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years', life_train, return_type = 'dataframe')
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+
+# mlr72_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat72 = result_mlr72.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality', 'Diphtheria','Infant_Deaths','GDP','Thinness_5_9_years']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat72, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat72')
+plt.title('Scatter Plot of mlr72')
+
+# mlr8 : Measles 변수 추가
+result_mlr8 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Measles + Status:Thinness_5_9_years', data=life_train).fit()
+result_mlr8.summary()
+
+# Status:Measles 추가
+result_mlr81 = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Measles + Status:Thinness_5_9_years + Status:Measles', data=life_train).fit()
+result_mlr81.summary()
+
+# F test
+anova_lm(result_mlr8, result_mlr81, typ=1)
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Measles', life_train, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr81_Scatter Plot
+y = life_test['Life_Expectancy']
+y_hat81 = result_mlr81.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality', 'Diphtheria','Infant_Deaths','GDP','Thinness_5_9_years','Measles']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat81, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat81')
+plt.title('Scatter Plot of mlr81')
+
+# 최종 회귀 모형
+result = smf.ols('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Measles + Status:Thinness_5_9_years + Status:Measles', data=life_train).fit()
+result.summary()
+
+# 가정확인
+final_var = ['Life_Expectancy', 'HIV_AIDS', 'Status', 'Income_Composition_Of_Resources',
+            'Adult_Mortality', 'Diphtheria', 'Infant_Deaths', 'GDP',
+           'Thinness_5_9_years', 'Measles']
+
+# 선형성
+plt.figure(figsize=(15,6))
+sns.heatmap(life_train[final_var].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm')
+plt.title('Data Correlation Matrix Heatmap')
+plt.show()
+
+# 다중공선성
+y, X = dmatrices('Life_Expectancy ~ HIV_AIDS + Status + Income_Composition_Of_Resources + Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years + Measles', life_train, return_type = 'dataframe')
+
+vif = pd.DataFrame()
+vif["features"] = X.columns 
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif
+
+# 정규성
+resid = result.resid
+stats.probplot(resid,plot=plt)
+plt.show()
+
+# 등분산성
+fitted = result.predict(life_train)
+sns.regplot(fitted, np.sqrt(np.abs(stats.zscore(resid))),lowess = True, line_kws={'color' : 'red'})
+plt.xlim(55.0, 71.50)
+plt.show()
+
+# 회귀 모형 예측력
+y = life_test['Life_Expectancy']
+y_hat = result.predict(life_test[['HIV_AIDS' , 'Status','Income_Composition_Of_Resources','Adult_Mortality',
+                                        'Diphtheria','Infant_Deaths','GDP','Thinness_5_9_years','Measles']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat, marker='o')
+x = np.arange(50, 90)
+plt.plot(x,x, 'red')
+plt.xlabel('test y')
+plt.ylabel('train Y_hat')
+plt.title('Scatter Plot of Life_expectancy')
+
+X_test = life_test.copy()
+del X_test['Life_Expectancy']
+mse = mean_squared_error(y_true = life_test['Life_Expectancy'], y_pred = result.predict(X_test))
+print('mse =', mse) 
+
+rmse= np.sqrt(mse)
+print("rmse =",rmse)
+
+y_true = life_test["Life_Expectancy"]
+y_pred = result.predict(X_test)
+
+def MAE(y_true, y_pred): 
+    print ("mae =", np.mean(np.abs((y_true - y_pred))))
+
+MAE(y_true, y_pred)
+
+########################## 아시아 데이터
+
+# 아시아 데이터 생성
+Asia = ["Oman", "Nepal","Jordan","Republic of Korea", "Uzbekistan","Timor-Leste", "Iraq","Laos",
+        "Iran (Islamic Republic of)","Lebanon","Malaysia","India", "Maldives","Indonesia","Mongolia","Japan","Myanmar", 
+        "Democratic People's Republic of Korea", "Bahrain", "China", "Bangladesh", "Kazakhstan", 
+        "Viet Nam", "Qatar", "Bhutan", "Cambodia", "Brunei Darussalam", "Kuwait", "Saudi Arabia" , "Kyrgyzstan", 
+        "Sri Lanka", "Thailand", 'Syrian Arab Republic', "Taiwan", "Singapore", "Tajikistan", "Arab Emirates", "Turkey", 
+        "Turkmenistan", "Azerbaijan", "Pakistan", "Afghanistan", "Philippines", "Yemen"]
+asia_data = life_wins_data[life_wins_data['Country'].isin(Asia)]
+
+import csv
+write =  open('asia.csv','w',encoding='utf-8',newline='') 
+wr = csv.writer(write)
+wr.writerow(asia_data)
+for i in range(1,656):
+     wr.writerow(asia_data.iloc[i,:])
+write.close()
+
+# Status에 따른 차이
+asia_data.Status.value_counts().plot(kind='pie', autopct='%.2f')
+plt.ylabel('')
+plt.title('Pie Chart of Country Status')
+
+asia_data.Status.value_counts().plot(kind='bar')
+plt.title('Count of Rows by Life Expectancy')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Count of Rows')
+asia_data.groupby('Status').Life_Expectancy.agg(['mean'])
+
+developed_le = asia_data[asia_data.Status == 'Developed'].Life_Expectancy
+developing_le = asia_data[asia_data.Status == 'Developing'].Life_Expectancy
+stats.ttest_ind(developed_le, developing_le, equal_var=False)
+
+###################### 회귀 모델링
+from sklearn.preprocessing import LabelEncoder
+
+encoder = LabelEncoder()
+asia_data['Status'] = encoder.fit_transform(asia_data['Status'])
+
+var2 = list(asia_data.columns)[2:]
+
+asia_data.info()
+
+plt.figure(figsize=(15,6))
+sns.heatmap(asia_data[var2].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm')
+#plt.ylim(18, 0)
+plt.title('Data Correlation Matrix Heatmap')
+plt.show()
+
+# 상수항만 있는 모형
+result_intercept = smf.ols('Life_Expectancy ~ 1', data=asia_data).fit()
+result_intercept.summary()
+
+# 단순선형회귀 적합
+result_slr = smf.ols('Life_Expectancy ~ Schooling', data=asia_data).fit()
+result_slr.summary()
+
+# 단순선형회귀 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(asia_data['Schooling'], asia_data['Life_Expectancy'], marker='o', label='realtrain')
+plt.scatter(asia_data['Schooling'], result_slr.fittedvalues, marker='.', label='fitted')
+plt.plot(asia_data['Schooling'], result_slr.predict(asia_data['Schooling']), color='blue', linestyle='dashed', label='regression', markersize=0)
+
+pred_slr = result_slr.get_prediction().summary_frame()
+plt.plot(asia_data['Schooling'], pred_slr['mean_ci_lower'], 'r-.', label='means 95% CI', linewidth=1)
+plt.plot(asia_data['Schooling'], pred_slr['mean_ci_upper'], 'r-.', linewidth=1)
+plt.plot(asia_data['Schooling'], pred_slr['obs_ci_lower'], 'g-.', label='obs 95% CI', linewidth=1)
+plt.plot(asia_data['Schooling'], pred_slr['obs_ci_upper'], 'g-.', linewidth=1)
+plt.xlabel('Schooling')
+plt.legend()
+
+# 선형성 (상관계수 = 0.7)
+plt.scatter('Schooling','Life_Expectancy',data=asia_data)
+
+# 정규성
+resid_slr = result_slr.resid
+stats.probplot(resid_slr,plot=plt)
+plt.show()
+
+# 등분산성
+fitted_slr = result_slr.predict(asia_data)
+sns.regplot(fitted_slr, stats.zscore(resid_slr),lowess = True, line_kws={'color' : 'red'})
+#plt.xlim(55.0, 71.50)
+plt.show()
+
+# mlr1 : Adult_Mortality 변수 추가
+result_mlr1 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality', data=asia_data).fit()
+result_mlr1.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ + Schooling + Adult_Mortality', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr1_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat1 = result_mlr1.predict(asia_data[['Schooling','Adult_Mortality']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat1, marker='o', label='Scatter plot of mlr1')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat1')
+
+# mlr2 : GDP 변수 추가
+result_mlr2 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP ', data=asia_data).fit()
+result_mlr2.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr2_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat2 = result_mlr2.predict(asia_data[['Schooling','Adult_Mortality','GDP']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat2, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat2')
+plt.title('Scatter Plot of mlr2')
+
+# mlr3 : Polio 변수 추가
+result_mlr3 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio', data=asia_data).fit()
+result_mlr3.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr3_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat3 = result_mlr3.predict(asia_data[['Schooling','Adult_Mortality','GDP','Polio']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat3, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat3')
+plt.title('Scatter Plot of mlr3')
+
+# mlr4 : Income 변수 추가
+result_mlr4 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio + Income_Composition_Of_Resources', data=asia_data).fit()
+result_mlr4.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio + Income_Composition_Of_Resources', asia_data, return_type = 'dataframe')
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr4_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat4 = result_mlr4.predict(asia_data[['Schooling','Adult_Mortality','GDP','Polio','Income_Composition_Of_Resources']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat4, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y')
+plt.title('Scatter Plot of mlr4')
+
+# mlr5 : Diphtheria 변수 추가
+result_mlr5 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio + Income_Composition_Of_Resources + Diphtheria', data=asia_data).fit()
+result_mlr5.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Polio + Income_Composition_Of_Resources + Diphtheria', asia_data , return_type = 'dataframe')
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr5_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat5 = result_mlr5.predict(asia_data[['Schooling','Adult_Mortality','GDP','Polio','Income_Composition_Of_Resources','Diphtheria']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+
+plt.scatter(y, y_hat5, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat5')
+plt.title('Scatter Plot of mlr5')
+
+# mlr6:Polio변수제거
+result_mlr6 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Income_Composition_Of_Resources + Diphtheria', data=asia_data).fit()
+result_mlr6.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Income_Composition_Of_Resources + Diphtheria', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr6_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat6 = result_mlr6.predict(asia_data[['Schooling','Adult_Mortality','GDP','Income_Composition_Of_Resources','Diphtheria']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat6, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat6')
+plt.title('Scatter Plot of mlr6')
+
+# mlr7 : Percentage_Expenditure 변수 추가
+result_mlr7 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Income_Composition_Of_Resources + Diphtheria + Percentage_Expenditure', data=asia_data).fit()
+result_mlr7.summary()
+
+# mlr7_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat7 = result_mlr7.predict(asia_data[['Schooling','Adult_Mortality','GDP','Income_Composition_Of_Resources','Diphtheria','Percentage_Expenditure']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat7, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat7')
+plt.title('Scatter Plot of mlr7')
+
+# mlr8 : Status 변수 추가
+result_mlr8 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Income_Composition_Of_Resources + Diphtheria + Status', data=asia_data).fit()
+result_mlr8.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + GDP + Income_Composition_Of_Resources + Diphtheria + Status', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr8 _ Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat8 = result_mlr8.predict(asia_data[['Schooling','Adult_Mortality','GDP','Income_Composition_Of_Resources', 'Diphtheria','Status']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat8, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat8')
+plt.title('Scatter Plot of mlr8')
+
+# mlr9 : GDP변수 제거
+result_mlr9 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status', data=asia_data).fit()
+result_mlr9.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr9_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat9 = result_mlr9.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat9, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat9')
+plt.title('Scatter Plot of mlr9')
+
+# mlr10 : Thinness_5_9_years 변수 추가
+result_mlr10 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Thinness_5_9_years ', data=asia_data).fit()
+result_mlr10.summary()
+
+# mlr10_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat10 = result_mlr10.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Thinness_5_9_years']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat10, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat10')
+plt.title('Scatter Plot of mlr10')
+
+# mlr11 : Thinness_10_19_Years 변수 추가
+result_mlr11 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Thinness_10_19_Years ', data=asia_data).fit()
+result_mlr11.summary()
+
+# mlr11_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat11 = result_mlr11.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Thinness_10_19_Years']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat11, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat11')
+plt.title('Scatter Plot of mlr11')
+
+# mlr12 : Infant_Deaths 변수 추가
+result_mlr12 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Infant_Deaths', data=asia_data).fit()
+result_mlr12.summary()
+
+# mlr12_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat12 = result_mlr12.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Infant_Deaths']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat12, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat12')
+plt.title('Scatter Plot of mlr12')
+
+# mlr13 : Alcohol 변수 추가
+result_mlr13 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol', data=asia_data).fit()
+result_mlr13.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr13_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat13 = result_mlr13.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat13, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat13')
+plt.title('Scatter Plot of mlr13')
+
+# mlr14 : HIV_AIDS 변수 추가
+result_mlr14 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS', data=asia_data).fit()
+result_mlr14.summary()
+
+# VIF 확인
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif["features"] = X.columns 
+vif
+
+# mlr14_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat14 = result_mlr14.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+
+plt.scatter(y, y_hat14, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat14')
+plt.title('Scatter Plot of mlr14')
+
+# mlr15 : Measles 변수 추가
+result_mlr15 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Measles', data=asia_data).fit()
+result_mlr15.summary()
+
+# mlr15_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat15 = result_mlr15.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS','Measles']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat15, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat15')
+plt.title('Scatter Plot of mlr15')
+
+# mlr16 : Status:Schooling 교호작용 확인
+result_mlr16 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:Schooling', data=asia_data).fit()
+result_mlr16.summary()
+
+# mlr16_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat16 = result_mlr16.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat16, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat16')
+plt.title('Scatter Plot of mlr15')
+
+# mlr17 : Status:Adult_Mortality 교호작용 확인
+result_mlr17 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:Adult_Mortality', data=asia_data).fit()
+result_mlr17.summary()
+
+# mlr17_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat17 = result_mlr17.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat17, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat17')
+plt.title('Scatter Plot of mlr17')
+
+# mlr18 : Status:Income 교호작용확인
+result_mlr18 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:Income_Composition_Of_Resources', data=asia_data).fit()
+result_mlr18.summary()
+
+# mlr18 _Scatter Plot 
+y = asia_data['Life_Expectancy']
+y_hat18 = result_mlr18.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat18, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat18')
+plt.title('Scatter Plot of mlr18')
+
+# mlr19 : Status : Diphtheria 교호작용 확인
+result_mlr19 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:Diphtheria', data=asia_data).fit()
+result_mlr19.summary()
+
+# mlr19_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat19 = result_mlr19.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat19, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat19')
+plt.title('Scatter Plot of mlr19')
+
+# mlr20 : Status:Alcohol 교호작용 확인
+result_mlr20 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:Alcohol', data=asia_data).fit()
+result_mlr20.summary()
+
+# mlr20 _ Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat20 = result_mlr20.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat20, marker='o')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat20')
+plt.title('Scatter Plot of mlr20')
+
+# mlr21 : Status:HIV_AIDS 교호작용 확인
+result_mlr21 = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS + Status:HIV_AIDS', data=asia_data).fit()
+result_mlr21.summary()
+
+# mlr21_Scatter Plot
+y = asia_data['Life_Expectancy']
+y_hat21 = result_mlr21.predict(asia_data[['Schooling','Adult_Mortality','Income_Composition_Of_Resources','Diphtheria','Status', 'Alcohol','HIV_AIDS']])
+# 시각화
+plt.figure(figsize=(13,7))
+plt.scatter(y, y_hat21, marker='o')
+plt.plot(y,y,'r')
+plt.xlabel('Life Expectancy')
+plt.ylabel('Y_hat21')
+plt.title('Scatter Plot of mlr21')
+
+# F test
+anova_lm(result_mlr14, result_mlr21, typ=1)
+
+# 최종모형 선택
+result = smf.ols('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS ', data=asia_data).fit()
+result.summary()
+
+# 가정확인
+final_var = ['Life_Expectancy', 'Schooling', 'Adult_Mortality',
+             'Income_Composition_Of_Resources', 'Diphtheria', 'Status',
+             'Alcohol', 'HIV_AIDS']
+
+# 선형성
+plt.figure(figsize=(15,6))
+sns.heatmap(asia_data[final_var].corr(), annot=True, fmt='.1g', vmin=-1, vmax=1, center=0, cmap='coolwarm')
+plt.title('Data Correlation Matrix Heatmap')
+plt.show()
+
+# 다중공선성
+y, X = dmatrices('Life_Expectancy ~ Schooling + Adult_Mortality + Income_Composition_Of_Resources + Diphtheria + Status + Alcohol + HIV_AIDS', asia_data, return_type = 'dataframe')
+vif = pd.DataFrame()
+vif["features"] = X.columns 
+vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+vif
+
+# 정규성
+resid = result.resid
+
+stats.probplot(resid,plot=plt)
+plt.show()
+
+# 등분산성
+fitted = result.predict(asia_data)
+sns.regplot(fitted,stats.zscore(resid),lowess = True, line_kws={'color' : 'red'})
+plt.show()
+
+############# R을 통한 표준화계수 확인
+library(QuantPsyc)
+asia <- read.csv('asia.csv') 
+result1 <- lm(Life_Expectancy ~ Schooling + Adult_Mortality+ Income_Composition_Of_Resources+
+		Diphtheria + Status + Alcohol + HIV_AIDS , data=asia)
+lm.beta(result1)
+
+life_train <- read.csv('life_train.csv') 
+result2 <- lm(Life_Expectancy ~ HIV_AIDS +Status + Income_Composition_Of_Resources+
+			Adult_Mortality + Diphtheria + Infant_Deaths + GDP + Thinness_5_9_years+
+			Measles+Status*Thinness_5_9_years,data=life_train)
+lm.beta(result2)
+
+
+############# R을 통한 잔차의 독립성 확인
+result1_2 <- lm(Life_Expectancy ~ HIV_AIDS,data=life_train)
+result2_2 <- lm(Life_Expectancy~Schooling, data=asia)
+
+dwtest(result1) 
+dwtest(result1_2)
+dwtest(result2) 
+dwtest(result2_2)
+
+############# R을 통한 아시아국가 랜덤포레스트
+library("randomForest")
+set.seed(1234)
+asia_rf = randomForest(Life_Expectancy ~ Schooling + Adult_Mortality + 
+				Income_Composition_Of_Resources + Diphtheria+
+				Status + Alcohol + HIV_AIDS, data = asia, importance = T)
+importance(asia_rf)
+varImpPlot(asia_rf, main="varImpPlot of asia")
